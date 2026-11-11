@@ -1,0 +1,6 @@
+{
+  "name": "mod-maker",
+  "version": "1.0.0",
+  "description": "Claude Code mod 를 만들 때 쓰는 스킬과 처음 설정 명령(/mod-maker-init · /mod-color)",
+  "author": { "name": "mod-maker" }
+}

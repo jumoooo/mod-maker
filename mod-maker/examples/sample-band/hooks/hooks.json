@@ -1,0 +1,4 @@
+{
+  "description": "sample-band 훅 모듈 — mod-maker 본보기",
+  "modules": ["./register.ts"]
+}

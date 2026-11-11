@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mod 미리 보기</title>
+<!--
+  만들기 전에 보이는 그림의 바탕 틀. 이 파일을 복사해서 아래 PREVIEW 객체만 채운다(preview.md).
+  틀이 화면마다 어두운 화면과 밝은 화면 두 벌을 그린다. 색은 PREVIEW.theme(= templates/ui/theme.ts 의 값)에서 온다.
+-->
+<style>
+  :root { --bg:#16171b; --panel:#1e2026; --line:#34373f; --text:#e8e6e1; --sub:#9a968f; --accent:#e6b44c; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.65 "Pretendard","Malgun Gothic","Apple SD Gothic Neo","Noto Sans KR",sans-serif; }
+  main { max-width:1180px; margin:0 auto; padding:28px 20px 60px; }
+  h1 { font-size:23px; margin:0 0 6px; } h2 { font-size:17px; margin:34px 0 10px; padding-top:16px; border-top:1px solid var(--line); }
+  h3 { font-size:13px; margin:0 0 8px; color:var(--sub); font-weight:600; }
+  p { margin:6px 0; } .sub { color:var(--sub); }
+  .cols { display:grid; grid-template-columns:1fr 1fr; gap:16px; } @media (max-width:860px) { .cols { grid-template-columns:1fr; } }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px; min-width:0; }
+  .tag { display:inline-block; font-size:12px; padding:1px 8px; border-radius:99px; border:1px solid var(--line); color:var(--sub); margin-bottom:8px; }
+  .tag.after { color:#16171b; background:var(--accent); border-color:var(--accent); }
+  .screen { font:13px/1.45 "D2Coding","Cascadia Mono","Menlo","Consolas",monospace; padding:12px 14px; border-radius:8px; border:1px solid var(--line); overflow-x:auto; }
+  .screen.dark { background:#0d0e11; color:#e8e6e1; } .screen.light { background:#fbfaf7; color:#24231f; }
+  .screen .in { max-width:100%; } .screen .r { display:flex; white-space:pre; min-height:1.45em; }
+  .screen .mid { flex:1 1 0; min-width:0; overflow:hidden; } .screen .fill { flex:1 1 0; min-width:0; overflow:hidden; white-space:nowrap; }
+  table { border-collapse:collapse; width:100%; font-size:14px; } th,td { text-align:left; padding:6px 10px; border-bottom:1px solid var(--line); vertical-align:top; } th { color:var(--sub); font-weight:600; }
+  .ask { border-left:3px solid var(--accent); padding:6px 0 6px 12px; margin:18px 0 0; font-size:16px; }
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+// ───────── 여기만 채운다 ─────────
+const PREVIEW = {
+  mod: 'sample-band',                 // mod 이름
+  version: 1,                         // 그림 버전 — 고칠 때마다 새 파일에 1 씩 올린다
+  summary: '오늘 할 일의 상태를 프롬프트 위 띠에 보여 줍니다.',
+  // templates/ui/theme.ts 의 값을 그대로 옮긴다
+  theme: { dark: { from: '#e6b44c', to: '#e05a8c' }, light: { from: '#b8860b', to: '#c2185b' } },
+  // 고치는 것이면 before 에 지금 화면을, 새로 만드는 것이면 before 를 비운다([]).
+  before: [],
+  after: [
+    {
+      name: '넓은 화면 (100칸)', width: 60,
+      frame: { title: '✦ 오늘 할 일', footer: '갱신 4초 전' },
+      lines: [
+        [],
+        [{ t: '‖ 당신 차례', c: 'needsYou', b: true }, { t: '  요약 문단 — 이대로 보낼지 묻는 중' }],
+        [{ t: '● 진행 중  ', c: 'now', b: true }, { t: '  지난주 수치를 표로 옮긴다  1분 12초', }],
+        [{ t: '✓ 끝남    ', c: 'done' }, { t: '  회의록 3건 모으기', c: 'muted' }],
+        [],
+        [{ t: '[1] 다시 읽기', bg: 'themeEnd', b: true }],
+        [{ t: '[2]', c: 'themeEnd', b: true }, { t: ' 비우기', b: true }],
+      ],
+    },
+    {
+      name: '좁은 화면 (40칸) — 한 줄 요약', width: 40,
+      lines: [[{ t: '◆ 할 일 3', c: 'theme', b: true }, { t: ' · ' , c: 'muted' }, { t: '‖ 당신 차례 1', c: 'needsYou', b: true }, { t: ' · 1/3 끝남' }]],
+    },
+  ],
+  // 그림의 각 부분이 하는 일
+  parts: [
+    ['맨 윗줄', '무엇을 보여 주는 창인지. 테마 색으로 그립니다'],
+    ['당신 차례', '사람의 답을 기다리는 일. 항상 맨 위, 호박색'],
+    ['[1] [2]', '누를 수 있는 줄. 포인터를 올리면 색이 뒤집힙니다'],
+    ['갱신 4초 전', '값이 얼마나 오래됐는지'],
+  ],
+  question: '이 모양으로 만들까요?',
+}
+// ───────── 여기부터는 틀 ─────────
+const STATE = { needsYou: ['#e6a23c', '#a86a00'], now: ['#d97757', '#b5532f'], done: ['#7bc47f', '#2e7d32'], failed: ['#e5706b', '#c62828'], muted: ['#9a968f', '#77736b'], text: ['#e8e6e1', '#24231f'] }
+const rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16))
+const hex = c => '#' + c.map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('')
+const mix = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t)
+const cellW = s => [...s].reduce((n, ch) => n + (/[ᄀ-ᇿ⺀-鿿가-힣＀-｠]/.test(ch) ? 2 : 1), 0)
+const esc = s => s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]))
+
+function drawScreen(screen, mode) {
+  const th = PREVIEW.theme[mode], from = rgb(th.from), to = rgb(th.to), k = mode === 'dark' ? 0 : 1
+  const W = screen.width || 60, rows = screen.lines, H = rows.length + (screen.frame ? 2 : 0)
+  const col = (x, y) => hex(mix(from, to, (x / W) * 0.65 + (y / Math.max(1, H)) * 0.35))
+  const g = (s, x, y, b) => { let o = '', at = x; for (const ch of s) { o += `<span style="color:${col(at, y)}${b ? ';font-weight:700' : ''}">${esc(ch)}</span>`; at += cellW(ch) } return o }
+  const seg = (s, x, y) => {
+    const style = []
+    if (s.c === 'theme') return g(s.t, x, y, s.b)
+    if (s.c === 'themeEnd') style.push(`color:${th.to}`)
+    else if (s.c) style.push(`color:${(STATE[s.c] || STATE.text)[k]}`)
+    if (s.bg === 'themeEnd') style.push(`background:${th.to}`, `color:${mode === 'dark' ? '#16171b' : '#fff'}`)
+    if (s.b) style.push('font-weight:700')
+    return `<span style="${style.join(';')}">${esc(s.t)}</span>`
+  }
+  let html = `<div class="in" style="width:${W}ch">`
+  if (screen.frame) {
+    const ti = ` ${screen.frame.title} `
+    html += `<div class="r">${g('╭─', 0, 0)}${g(ti, 2, 0, true)}<span class="fill">${g('─'.repeat(W), 2 + cellW(ti), 0)}</span>${g('╮', W - 1, 0)}</div>`
+  }
+  rows.forEach((line, i) => {
+    const y = i + (screen.frame ? 1 : 0)
+    let x = 2, body = ''
+    for (const s of line) { body += seg(s, x, y); x += cellW(s.t) }
+    html += screen.frame ? `<div class="r">${g('│', 0, y)}<span class="mid"> ${body} </span>${g('│', W - 1, y)}</div>` : `<div class="r"><span class="mid">${body}</span></div>`
+  })
+  if (screen.frame) {
+    const ft = screen.frame.footer ? ` ${screen.frame.footer} ` : ''
+    html += `<div class="r">${g('╰', 0, H - 1)}<span class="fill">${g('─'.repeat(W), 1, H - 1)}</span><span style="color:${STATE.muted[k]}">${esc(ft)}</span>${g('─╯', W - 2, H - 1)}</div>`
+  }
+  return html + '</div>'
+}
+const screensHtml = list => list.map(s => `<h3>${esc(s.name)}</h3><div class="cols" style="margin-bottom:14px"><div><div class="screen dark">${drawScreen(s, 'dark')}</div></div><div><div class="screen light">${drawScreen(s, 'light')}</div></div></div>`).join('')
+document.title = `${PREVIEW.mod} v${PREVIEW.version}`
+document.documentElement.style.setProperty('--accent', PREVIEW.theme.dark.from)
+const hasBefore = PREVIEW.before && PREVIEW.before.length > 0
+document.getElementById('app').innerHTML = `
+  <h1>${esc(PREVIEW.mod)} — 만들기 전 그림 (v${PREVIEW.version})</h1>
+  <p class="sub">${esc(PREVIEW.summary)} 아직 만들지 않았습니다. 이 그림이 승인되면 이대로 만듭니다.</p>
+  <p class="sub">왼쪽은 어두운 화면, 오른쪽은 밝은 화면입니다. 색 띠와 테두리는 지금 저장된 테마 색입니다.</p>
+  ${hasBefore ? `<h2>지금</h2><span class="tag">지금 화면</span>${screensHtml(PREVIEW.before)}` : ''}
+  <h2>${hasBefore ? '바꾼 뒤' : '이렇게 보입니다'}</h2><span class="tag after">${hasBefore ? '바꾼 뒤' : '만들 화면'}</span>${screensHtml(PREVIEW.after)}
+  <h2>각 부분이 하는 일</h2>
+  <div class="card"><table>${PREVIEW.parts.map(([a, b]) => `<tr><th style="width:26%">${esc(a)}</th><td>${esc(b)}</td></tr>`).join('')}</table></div>
+  <p class="ask">${esc(PREVIEW.question)}</p>`
+</script>
+</body>
+</html>

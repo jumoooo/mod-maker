@@ -1,0 +1,4 @@
+{
+  "description": "mod-maker 처음 설정과 테마 색 명령",
+  "modules": ["./register.ts"]
+}
